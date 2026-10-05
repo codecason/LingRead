@@ -1,0 +1,29 @@
+LingRead v0.2.10 便携版打包工具
+
+这份脚本整合了此前的源码筛选、个人资料排除、PyInstaller 单文件打包、清单生成和 ZIP 校验步骤；没有安装版。
+
+环境：Windows，Python 3.12。在项目根目录执行以下命令；脚本位于 tools，LingReadStandalone.spec 位于项目根目录。
+
+首次准备依赖：
+python -m pip install -r requirements.txt
+
+从源码构建并打包：
+python tools/package_portable.py --project . --output release
+
+只打包已有 dist/LingRead.exe（会检查版本是否匹配，但不会重新编译）：
+python tools/package_portable.py --project . --output release --skip-build
+
+输出：
+LingRead-v当前版本-source-and-portable.zip
+LingRead-v当前版本-source-and-portable.sha256.txt
+
+脚本自动读取 src/lingread/__init__.py 中的版本，不硬编码用户目录。
+默认在临时目录构建，不改动原项目和 backups；输出文件已存在时退出，避免覆盖。
+压缩包只含单文件 EXE、源码、白名单测试、公开使用说明、构建配置和本打包脚本。
+排除备份、安装版、个人 PDF/截图、对话记录、日志、缓存、偏好设置和调试脚本。
+依赖私人截图的测试会标记跳过。
+
+路径检查覆盖源码、原生依赖、Python 内嵌模块与 ZIP 内文件，检测当前用户目录和项目绝对路径；保留第三方库自己的构建元数据。
+这不是通用敏感信息识别器：发布新增代码前仍需检查硬编码密钥、个人信息和额外依赖。
+
+SHA256 清单覆盖包内文件。生成 ZIP 后逐项读回并核验哈希；源码和软件版本仍为 v0.2.10。

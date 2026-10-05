@@ -1,0 +1,18 @@
+# Generated portable binaries and release archives
+/dist/
+/release/
+/release-*/
+/build/
+/build-*/
+*.exe
+*.zip
+
+# Local environments and runtime data
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.lingread/
+
+# Local backups are never committed
+/backups/

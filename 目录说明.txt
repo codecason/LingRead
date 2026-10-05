@@ -1,0 +1,10 @@
+LingRead v0.2.10 主目录
+
+日常使用：双击 启动聆阅.bat（启动 dist\LingRead.exe）。
+源代码：src；程序入口：LingRead.py。
+测试与设计资料：tests、docs。
+打包脚本：tools\package_portable.py，构建配置：LingReadStandalone.spec。
+交付文件：release 下的源码＋便携版压缩包、打包脚本压缩包和校验文件。
+从主目录打包：python tools/package_portable.py --project . --output release
+
+本目录保留原项目资料；对外分发请使用 release 中已脱敏的压缩包。
