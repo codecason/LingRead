@@ -23,7 +23,10 @@ class GuiReadingStartTests(unittest.TestCase):
     def test_clipboard_focus_change_does_not_discard_captured_click(self):
         self.check_read_start(True)
 
-    def check_read_start(self, clipboard_changes_focus):
+    def test_manual_pdf_choice_then_retry_reads_selected_text(self):
+        self.check_read_start(False, manual=True)
+
+    def check_read_start(self, clipboard_changes_focus, manual=False):
         app = QApplication.instance() or QApplication([])
         app.setQuitOnLastWindowClosed(False)
         with tempfile.TemporaryDirectory() as temp:
@@ -40,7 +43,7 @@ class GuiReadingStartTests(unittest.TestCase):
                                      GetAsyncKeyState=lambda key:0)
             win = SimpleNamespace(hwnd=123, title='start.pdf', pid=1)
             bridge = SimpleNamespace(find_windows=lambda:[win], find_active_window=lambda:win,
-                get_viewport_rect=lambda w:(0,200,800,800), resolve_document_path=lambda w:path,
+                get_viewport_rect=lambda w:(0,200,800,800), resolve_document_path=lambda w:None if manual else path,
                 get_current_page=lambda w:0, selection_text=lambda w:'',
                 get_zoom=lambda w:1, dpi=lambda w:72)
             if clipboard_changes_focus:
@@ -69,7 +72,8 @@ class GuiReadingStartTests(unittest.TestCase):
                 release()
                 bars[0].btn_read.click()
             native.GetAsyncKeyState=lambda key:0x8000
-            with patch.object(reader, 'FoxitBridge', return_value=bridge), \
+            with patch.object(reader.QFileDialog, 'getOpenFileName', return_value=(path, 'PDF')), \
+                 patch.object(reader, 'FoxitBridge', return_value=bridge), \
                  patch.object(reader.ctypes.windll, 'user32', native), \
                  patch.object(reader, 'get_mouse_point', side_effect=lambda:(point.x(),point.y())), \
                  patch.object(QCursor, 'pos', side_effect=lambda:point), \
@@ -78,6 +82,9 @@ class GuiReadingStartTests(unittest.TestCase):
                  patch.object(reader, 'capture_viewport', return_value=None), \
                  patch.object(reader, 'register_page', return_value=(0,0,.5,100)), \
                  patch.object(reader, 'make_tray', return_value=SimpleNamespace(hide=lambda:None)):
+                if manual:
+                    QTimer.singleShot(10, click_read)
+                    QTimer.singleShot(50, lambda: setattr(native, 'GetAsyncKeyState', lambda key:0x8000))
                 QTimer.singleShot(100, release)
                 QTimer.singleShot(200, press_bar)
                 QTimer.singleShot(300, click_read)

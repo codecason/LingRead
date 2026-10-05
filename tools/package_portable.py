@@ -17,7 +17,7 @@ import sys
 import tempfile
 import zipfile
 
-TESTS = ('test_diagnostics.py', 'test_foxit_page_number.py',
+TESTS = ('test_document_binding.py', 'test_diagnostics.py', 'test_foxit_page_number.py',
          'test_gui_reading_start.py', 'test_line_wrap.py', 'test_manual_location.py',
          'test_punctuation_queue.py', 'test_reading_regressions.py',
          'test_standalone_release.py', 'test_voice_switching.py')

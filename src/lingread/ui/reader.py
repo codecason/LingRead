@@ -7,9 +7,10 @@ import sys
 import time
 from ..diagnostics import event, heartbeat
 from PySide6.QtCore import QObject, Signal, QTimer, Qt, QEventLoop
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QFileDialog
 from PySide6.QtGui import QGuiApplication, QCursor
 from ..bridge.foxit import FoxitBridge, get_mouse_point
+from ..bridge.document import DocumentBinding
 from ..bridge.geometry import capture_viewport, render_page, register_page
 from ..text.engine import TextEngine, ReadingPosition
 from ..tts.edge import EdgeTTSEngine
@@ -56,6 +57,7 @@ def follow_direction(rect, viewport):
 def run_gui(pdf_path, page, voice):
     app = QApplication.instance() or QApplication(sys.argv)
     bridge, events = FoxitBridge(), Events()
+    binding = DocumentBinding()
     holder = {'lang_mode': 'auto', 'voice': voice or load_voice()}
     overlay = HighlightOverlay()
     workers = ThreadPoolExecutor(max_workers=1, thread_name_prefix='page-registration')
@@ -281,9 +283,18 @@ def run_gui(pdf_path, page, voice):
             path, pg, selection = pdf_path, page, ''
             if win:
                 path = bridge.resolve_document_path(win)
+                path, selected = binding.resolve(win, path, lambda: QFileDialog.getOpenFileName(
+                    bar, '请选择 Foxit 当前打开的同一份 PDF', '', 'PDF 文件 (*.pdf)')[0])
                 if path is None:
-                    event('start_rejected', request=epoch, reason='document_path_unknown')
-                    raise ValueError('无法确认当前 PDF 路径，请使用 --pdf 指定文件')
+                    event('start_rejected', request=epoch, reason='document_selection_cancelled')
+                    bar.status.setText('已取消选择 PDF；可再次点击朗读')
+                    return
+                if selected:
+                    # The dialog changes focus: never reuse the pre-dialog click.
+                    ctx['anchor'] = None
+                    event('document_bound', request=epoch, reason='manual_selection')
+                    bar.status.setText('已关联 PDF；请回到 Foxit 点击或圈选正文，再点击朗读')
+                    return
                 pg = bridge.get_current_page(win)
                 if pg is None:
                     event('start_rejected', request=epoch, reason='page_control_unreadable')

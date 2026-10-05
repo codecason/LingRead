@@ -219,19 +219,22 @@ class FoxitBridge:
         nt = _normalize(name)
         if not nt:
             return None
-        best: tuple[float, Path | None] = (0.0, None)
+        candidates = {}
         for full in self._mru_paths():
             p = Path(full)
-            if not p.exists():
+            if not p.is_file():
                 continue
             stem = _normalize(p.stem)
-            if nt and stem and (nt in stem or stem in nt):
-                return p
-            # 标题与文件名可能不一致（如 "Volume I_ ..." 标题省略卷号），用相似度兜底
-            ratio = difflib.SequenceMatcher(None, nt, stem).ratio()
-            if ratio > best[0]:
-                best = (ratio, p)
-        return best[1] if best[0] >= 0.55 else None
+            score = 1.0 if nt and stem and (nt in stem or stem in nt) else difflib.SequenceMatcher(None, nt, stem).ratio()
+            candidates[p] = score
+        ranked = sorted(candidates.items(), key=lambda item: item[1], reverse=True)
+        if not ranked or ranked[0][1] < 0.55:
+            event('document_resolution', reason='no_confident_candidate')
+            return None
+        if len(ranked) > 1 and ranked[0][1] - ranked[1][1] < 0.08:
+            event('document_resolution', reason='ambiguous_candidates')
+            return None
+        return ranked[0][0]
 
     @staticmethod
     def _mru_paths() -> list[str]:

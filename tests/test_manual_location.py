@@ -32,7 +32,7 @@ class ManualLocationTests(unittest.TestCase):
                 for _ in range(3):
                     doc.new_page().insert_text((100, 780), 'Read this sentence.')
                 doc.save(path)
-            win = SimpleNamespace(hwnd=123, title='pages.pdf')
+            win = SimpleNamespace(hwnd=123, pid=1, title='pages.pdf')
             native = SimpleNamespace(GetForegroundWindow=lambda:123,
                 GetAsyncKeyState=lambda key:0, IsIconic=lambda hwnd:False,
                 SetForegroundWindow=lambda hwnd:None)
